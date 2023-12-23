@@ -1,9 +1,12 @@
+use flate2::{self, read::ZlibDecoder};
 #[allow(unused_imports)]
 use std::env;
-use std::{fs::File, io::{BufReader,BufRead}};
 #[allow(unused_imports)]
 use std::fs;
-use flate2::{self, read::ZlibDecoder};
+use std::{
+    fs::File,
+    io::{BufRead, BufReader},
+};
 
 fn main() {
     // Uncomment this block to pass the first stage
@@ -27,19 +30,34 @@ fn main() {
         "cat-file" => {
             let file = args.last().map(|s| s.as_str()).unwrap_or_else(|| "");
             let (fst, snd) = file.split_at(2);
-            let cont = std::fs::read_dir(format!(".git/objects/{}", &fst)).expect("Error: Object not found");
+            let cont = std::fs::read_dir(format!(".git/objects/{}", &fst))
+                .expect("Error: Object not found");
             let vec: Vec<String> = cont
-                .map(|entry| entry.expect("Error reading").file_name().to_str().expect("Error to str").to_owned())
+                .map(|entry| {
+                    entry
+                        .expect("Error reading")
+                        .file_name()
+                        .to_str()
+                        .expect("Error to str")
+                        .to_owned()
+                })
                 .filter(|entry| entry.contains(snd))
                 .collect();
             let found = vec.first().expect("Match not found");
-            let stream = File::open(format!(".git/objects/{}/{}",fst, found)).expect(format!("can't read .git/objects/{}",file).as_str());
+            let stream = File::open(format!(".git/objects/{}/{}", fst, found))
+                .expect(format!("can't read .git/objects/{}", file).as_str());
             let buff_reader = BufReader::new(ZlibDecoder::new(stream));
             let str: String = buff_reader
                 .lines()
                 .map(|l| l.expect("Error read line").to_string())
-                .map(|l| if l.contains("\x20") && l.contains("\x00") { l.split('\x00').last().expect("Error expliting").to_string() } else { l } )
-                .fold(String::new(), |a, b| a + "\n"+ &b.to_owned());
+                .map(|l| {
+                    if l.contains("\x20") && l.contains("\x00") {
+                        l.split('\x00').last().expect("Error expliting").to_string()
+                    } else {
+                        l
+                    }
+                })
+                .fold(String::new(), |a, b| a + "\n" + &b.to_owned());
             print!("{}", str.trim())
         }
         _ => {
