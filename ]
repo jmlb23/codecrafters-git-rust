@@ -9,7 +9,7 @@ fn main() {
 
     // Uncomment this block to pass the first stage
     let args: Vec<String> = env::args().collect();
-    if args.get(1).map(|x| x.as_str()).unwrap_or_else(|| "") == "init" {
+    if args.first().unwrap_or_else(|| "") == "init" {
         match fs::create_dir(".git")
                     .and_then(|_| fs::create_dir(".git/objects"))
                     .and_then(|_| fs::create_dir(".git/refs"))
