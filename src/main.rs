@@ -29,9 +29,16 @@ fn main() {
         }
         "cat-file" => {
             let file = args.last().map(|s| s.as_str()).unwrap_or_else(|| "");
-            let stream = File::open(file).expect(format!("can't read {}",file).as_str());
+            let (fst, snd) = file.split_at(2);
+            let cont = std::fs::read_dir(format!(".git/objects/{}", &fst)).expect("Error: Object not found");
+            let vec: Vec<String> = cont
+                .map(|entry| entry.expect("Error reading").file_name().to_str().expect("Error converting to str").to_string())
+                .filter(|entry| entry.contains(snd))
+                .collect();
+            let found = vec.first().expect("Match not found");
+            let stream = File::open(format!(".git/objects/{}/{}",fst, found)).expect(format!("can't read .git/objects/{}",file).as_str());
             let buff_reader = BufReader::new(ZlibDecoder::new(stream));
-            buff_reader.lines().for_each(|line| println!("{}", line.unwrap()));
+            buff_reader.lines().for_each(|line| print!("{}\n", line.unwrap()));
         }
         _ => {
             println!("unknown command: {}", args[1])
