@@ -29,7 +29,7 @@ fn main() {
         }
         "cat-file" => {
             let file = args.last().map(|s| s.as_str()).unwrap_or_else(|| "");
-            let stream = File::open(format!(".git/objects/{}",file)).expect(format!("can't read .git/objects/{}",file).as_str());
+            let stream = File::open(file).expect(format!("can't read {}",file).as_str());
             let buff_reader = BufReader::new(ZlibDecoder::new(stream));
             buff_reader.lines().for_each(|line| println!("{}", line.unwrap()));
         }
