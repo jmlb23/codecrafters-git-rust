@@ -35,7 +35,7 @@ fn main() {
             let found = vec.first().expect("Match not found");
             let stream = File::open(format!(".git/objects/{}/{}",fst, found)).expect(format!("can't read .git/objects/{}",file).as_str());
             let buff_reader = BufReader::new(ZlibDecoder::new(stream));
-            buff_reader.lines().skip(1).for_each(|line| print!("{}\n", line.expect("Error reading file contents")))
+            buff_reader.lines().for_each(|line| print!("{}\n", line.expect("Error reading file contents")))
         }
         _ => {
             println!("unknown command: {}", args[1])
