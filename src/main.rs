@@ -35,7 +35,11 @@ fn main() {
             let found = vec.first().expect("Match not found");
             let stream = File::open(format!(".git/objects/{}/{}",fst, found)).expect(format!("can't read .git/objects/{}",file).as_str());
             let buff_reader = BufReader::new(ZlibDecoder::new(stream));
-            let str: String = buff_reader.lines().fold(String::new(), |a, b| a + "\n"+ &b.expect("").to_owned());
+            let str: String = buff_reader
+                .lines()
+                .map(|l| l.expect("Error read line").to_string())
+                .map(|l| if l.contains("\x20") && l.contains("\x00") { l.split('\x00').last().expect("Error expliting").to_string() } else { l } )
+                .fold(String::new(), |a, b| a + "\n"+ &b.to_owned());
             print!("{}", str)
         }
         _ => {
