@@ -40,7 +40,7 @@ fn main() {
                 .map(|l| l.expect("Error read line").to_string())
                 .map(|l| if l.contains("\x20") && l.contains("\x00") { l.split('\x00').last().expect("Error expliting").to_string() } else { l } )
                 .fold(String::new(), |a, b| a + "\n"+ &b.to_owned());
-            print!("{}", str)
+            print!("{}", str.trim())
         }
         _ => {
             println!("unknown command: {}", args[1])
