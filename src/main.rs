@@ -6,9 +6,6 @@ use std::fs;
 use flate2::{self, read::ZlibDecoder};
 
 fn main() {
-    // You can use print statements as follows for debugging, they'll be visible when running tests.
-    println!("Logs from your program will appear here!");
-
     // Uncomment this block to pass the first stage
     let args: Vec<String> = env::args().collect();
 
@@ -38,9 +35,9 @@ fn main() {
             let found = vec.first().expect("Match not found");
             let stream = File::open(format!(".git/objects/{}/{}",fst, found)).expect(format!("can't read .git/objects/{}",file).as_str());
             let mut buff_reader = BufReader::new(ZlibDecoder::new(stream));
-            let mut content = String::new();
-            let _ = buff_reader.read_to_string(&mut content);
-            print!("{}", content)
+            let mut content = Vec::new();
+            let _ = buff_reader.read_to_end(&mut content);
+            print!("{}", String::from_utf8(content).expect("Error converting to UTF-8"))
         }
         _ => {
             println!("unknown command: {}", args[1])
