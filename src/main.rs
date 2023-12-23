@@ -37,7 +37,7 @@ fn main() {
             let mut buff_reader = BufReader::new(ZlibDecoder::new(stream));
             let mut content = Vec::new();
             let _ = buff_reader.read_to_end(&mut content);
-            print!("{}", String::from_utf8(content).expect("Error converting to UTF-8"))
+            print!("{}", String::from_utf8(content).expect("Error converting to UTF-8").replace("\x00", ""))
         }
         _ => {
             println!("unknown command: {}", args[1])
