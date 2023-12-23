@@ -1,6 +1,6 @@
 #[allow(unused_imports)]
 use std::env;
-use std::{fs::File, io::{BufReader, Read, BufRead}};
+use std::{fs::File, io::{BufReader,BufRead}};
 #[allow(unused_imports)]
 use std::fs;
 use flate2::{self, read::ZlibDecoder};
@@ -35,7 +35,8 @@ fn main() {
             let found = vec.first().expect("Match not found");
             let stream = File::open(format!(".git/objects/{}/{}",fst, found)).expect(format!("can't read .git/objects/{}",file).as_str());
             let buff_reader = BufReader::new(ZlibDecoder::new(stream));
-            buff_reader.lines().for_each(|line| print!("{}\n", line.expect("Error reading file contents")))
+            let str: String = buff_reader.lines().fold(String::new(), |a, b| a + "\n"+ &b.expect("").to_owned());
+            print!("{}", str)
         }
         _ => {
             println!("unknown command: {}", args[1])
