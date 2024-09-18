@@ -1,9 +1,11 @@
+use flate2::write::ZlibEncoder;
+use flate2::Compression;
 use flate2::{self, read::ZlibDecoder};
 use sha1::Digest;
 use sha1::Sha1;
 use std::env;
 use std::fs;
-use std::io::Read;
+use std::io::{Read, Write};
 use std::{
     fs::File,
     io::{BufRead, BufReader},
@@ -63,22 +65,27 @@ fn main() {
         }
         "hash-object" => {
             let file = args.last().map(|s| s.as_str()).unwrap_or_else(|| "");
-            let content = File::open(file).map(|mut file| {
-                let mut buff = String::new();
-                file.read_to_string(&mut buff).expect("error reading file");
-                format!("blob {}\0{}", buff.len(), buff)
-            }).expect("file doesn't exist");
+            let content = File::open(file)
+                .map(|mut file| {
+                    let mut buff = String::new();
+                    file.read_to_string(&mut buff).expect("error reading file");
+                    format!("blob {}\0{}", buff.len(), buff)
+                })
+                .expect("file doesn't exist");
             let mut hasher = Sha1::new();
             let content_cloned = content.clone();
             hasher.update(content.into_bytes());
             let result = hasher.finalize();
             let encoded_string = hex::encode(result);
-            let parent_dir_name =encoded_string[0..2].to_string();
-            let sub_dir_name =encoded_string[2..].to_string();
+            let parent_dir_name = encoded_string[0..2].to_string();
+            let sub_dir_name = encoded_string[2..].to_string();
             let full_path_rootdir = format!(".git/objects/{}", parent_dir_name);
             let full_path_subdir = format!(".git/objects/{}/{}", parent_dir_name, sub_dir_name);
+            let mut encoder = ZlibEncoder::new(Vec::new(), Compression::fast());
+            encoder.write_all(content_cloned.as_bytes()).expect("Error encoding with zlib");
+            let encoded = encoder.finish().expect("Error encoding with zlib");
             match fs::create_dir(full_path_rootdir)
-                .and_then(|_| fs::write(&full_path_subdir, content_cloned.as_str()))
+                .and_then(|_| fs::write(&full_path_subdir, encoded))
             {
                 Ok(_) => {
                     println!("{}", encoded_string)
@@ -89,7 +96,7 @@ fn main() {
             }
 
             println!("{}", encoded_string)
-        },
+        }
         _ => {
             println!("unknown command: {:?}", args)
         }
