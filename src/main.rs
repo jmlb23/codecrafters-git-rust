@@ -11,9 +11,9 @@ use std::{
 
 fn main() {
     // Uncomment this block to pass the first stage
-    let args: Vec<String> = env::args().collect();
+    let args: Vec<String> = env::args().skip(1).collect();
 
-    match args.get(1).map(|x| x.as_str()).unwrap_or_else(|| "") {
+    match args.first().map(|x| x.as_str()).unwrap_or_else(|| "") {
         "init" => {
             match fs::create_dir(".git")
                 .and_then(|_| fs::create_dir(".git/objects"))
@@ -78,21 +78,20 @@ fn main() {
             let full_path_rootdir = format!(".git/objects/{}", parent_dir_name);
             let full_path_subdir = format!(".git/objects/{}/{}", parent_dir_name, sub_dir_name);
             match fs::create_dir(full_path_rootdir)
-                .and_then(|_| fs::create_dir(&full_path_subdir))
                 .and_then(|_| fs::write(&full_path_subdir, content_cloned.as_str()))
             {
                 Ok(_) => {
                     println!("{}", encoded_string)
                 }
-                Err(_) => {
-                    println!("Something wrong happened")
+                Err(e) => {
+                    println!("Err {}", e)
                 }
             }
 
             println!("{}", encoded_string)
         },
         _ => {
-            println!("unknown command: {}", args[1])
+            println!("unknown command: {:?}", args)
         }
     }
 }
