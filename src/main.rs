@@ -1,8 +1,9 @@
 use flate2::{self, read::ZlibDecoder};
-#[allow(unused_imports)]
+use sha1::Digest;
+use sha1::Sha1;
 use std::env;
-#[allow(unused_imports)]
 use std::fs;
+use std::io::Read;
 use std::{
     fs::File,
     io::{BufRead, BufReader},
@@ -60,6 +61,36 @@ fn main() {
                 .fold(String::new(), |a, b| a + "\n" + &b.to_owned());
             print!("{}", str.trim())
         }
+        "hash-object" => {
+            let file = args.last().map(|s| s.as_str()).unwrap_or_else(|| "");
+            let content = File::open(file).map(|mut file| {
+                let mut buff = String::new();
+                file.read_to_string(&mut buff).expect("error reading file");
+                format!("blob {}\0{}", buff.len(), buff)
+            }).expect("file doesn't exist");
+            let mut hasher = Sha1::new();
+            let content_cloned = content.clone();
+            hasher.update(content.into_bytes());
+            let result = hasher.finalize();
+            let encoded_string = hex::encode(result);
+            let parent_dir_name =encoded_string[0..2].to_string();
+            let sub_dir_name =encoded_string[2..].to_string();
+            let full_path_rootdir = format!(".git/objects/{}", parent_dir_name);
+            let full_path_subdir = format!(".git/objects/{}/{}", parent_dir_name, sub_dir_name);
+            match fs::create_dir(full_path_rootdir)
+                .and_then(|_| fs::create_dir(&full_path_subdir))
+                .and_then(|_| fs::write(&full_path_subdir, content_cloned.as_str()))
+            {
+                Ok(_) => {
+                    println!("{}", encoded_string)
+                }
+                Err(_) => {
+                    println!("Something wrong happened")
+                }
+            }
+
+            println!("{}", encoded_string)
+        },
         _ => {
             println!("unknown command: {}", args[1])
         }
